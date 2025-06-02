@@ -226,6 +226,16 @@ if [ "$1" == "show" ]; then
     exit 0
 fi
 
+# Handle 'burn edit post-update-script' correctly
+if [ "$1" == "edit" ] && [ "$2" == "post-update-script" ] && [ -n "$3" ]; then
+    SCRIPT_PATH="$POST_UPDATE_DIR/$3.sh"
+    touch "$SCRIPT_PATH"
+    chmod +x "$SCRIPT_PATH"
+    echo "Editing post-update script for '$3'..."
+    nano "$SCRIPT_PATH"
+    exit 0
+fi
+
 # Handle 'burn hold'
 if [ "$1" == "hold" ] && [ -n "$2" ]; then
     echo "$2" >> "$HOLD_FILE"
