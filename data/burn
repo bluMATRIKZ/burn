@@ -97,15 +97,17 @@ if [ "$1" == "present" ]; then
     exit 0
 fi
 
-# Handle 'burn remove' with auto alias cleanup
-if [ "$1" == "remove" ]; then
+# Handle 'burn remove' with proper package name parsing
+if [ "$1" == "remove" ] && [ -n "$2" ]; then
+    REPO_NAME="$2"
+    TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
+
     if [ -d "$TARGET_DIR" ]; then
         rm -rf "$TARGET_DIR"
         sed -i "/^$REPO_NAME=/d" "$ALIAS_FILE"
-        sed -i "/^$URL=/d" "$ALIAS_FILE"  # Ensures auto-generated aliases are also removed
-        echo "Removed: $TARGET_DIR/ and cleaned up alias for $REPO_NAME"
+        echo "Removed: $TARGET_DIR/ and cleaned up alias for '$REPO_NAME'"
     else
-        echo "Not found: $TARGET_DIR/"
+        echo "Error: Package '$REPO_NAME' not found."
     fi
     exit 0
 fi
