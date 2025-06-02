@@ -18,14 +18,11 @@ fi
 # Define directories
 BURN_DIR="$HOME/.burn"
 DOWNLOAD_DIR="$BURN_DIR/downloads"
-ALIAS_FILE="$BURN_DIR/aliases"
 HOLD_FILE="$BURN_DIR/hold"
 POST_UPDATE_DIR="$BURN_DIR/post-update-scripts"
 
 mkdir -p "$DOWNLOAD_DIR"
-mkdir -p "$BURN_DIR/alias"
 mkdir -p "$POST_UPDATE_DIR"
-touch "$ALIAS_FILE"
 touch "$HOLD_FILE"
 
 # Display version info at startup
@@ -35,16 +32,13 @@ echo ""
 # Handle help requests first before any other processing
 if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "?" ]]; then
     echo " Usage:"
-    echo "  burn <git-url> - Clone and alias a Git repository"
-    echo "  burn alias <name> <git-url> - Set a shortcut alias for a repo"
-    echo "  burn remove <name> - Delete a package and its alias"
+    echo "  burn <git-url> - Clones a Git repository"
+    echo "  burn remove <name> - Deletes a package"
     echo "  burn present <name> - Check if a package is downloaded"
     echo "  burn update [--verbose] - Update all packages"
     echo "  burn hold <package> - Prevent updates for a package"
     echo "  burn unhold <package> - Allow updates again"
-    echo "  burn show alias | downloads | held - View stored package information"
-    echo "  burn unalias <name> <git-url> - Remove a shortcut alias for a repo"
-    echo "  burn realias <name> <git-url> - Rename a shortcut alias for a repo"
+    echo "  burn show downloads | held - View stored package information"
     echo "  burn edit post-update-script <package> - Update/Create a script to run after updating (eg; Auto Compiling)"
     exit 0  # Ensure burn exits immediately after displaying help
 fi
@@ -63,15 +57,7 @@ if [ "$1" == "--debug" ]; then
     exit 0
 fi
 
-# Handle alias resolution before cloning
-ALIAS_URL=$(grep "^$1=" "$ALIAS_FILE" | cut -d '=' -f2)
-if [ -n "$ALIAS_URL" ]; then
-    URL="$ALIAS_URL"
-else
-    URL="$1"
-fi
-
-# Handle direct Git URL cloning with auto-alias support
+# Handle direct Git URL cloning
 if [[ "$URL" =~ ^https:// ]]; then
     REPO_NAME=$(basename "$URL" .git)
     TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
@@ -81,8 +67,6 @@ if [[ "$URL" =~ ^https:// ]]; then
     else
         echo "Cloning $REPO_NAME..."
         git clone "$URL" "$TARGET_DIR"
-        echo "$REPO_NAME=$URL" >> "$ALIAS_FILE"  # Auto-alias registration
-        echo "Alias set: $REPO_NAME → $URL"
     fi
 
     exit 0
@@ -92,7 +76,7 @@ FILE_NAME=$(basename "$URL")
 REPO_NAME=$(echo "$FILE_NAME" | sed -E 's/\.git//g')
 TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
 
-# Handle 'burn update' properly
+# Handle 'burn update' with direct package names
 if [ "$1" == "update" ]; then
     VERBOSE=false
     if [ "$2" == "--verbose" ]; then
@@ -105,10 +89,10 @@ if [ "$1" == "update" ]; then
     for dir in "$DOWNLOAD_DIR"/*; do
         REPO_NAME=$(basename "$dir")
 
-        # Check if package is held **using an array lookup**
+        # Check if the package is held
         if [[ " ${HELD_PACKAGES[@]} " =~ " $REPO_NAME " ]]; then
             echo "$REPO_NAME | Held - Not updating"
-            continue  # Skip held packages
+            continue  # Skip updates for held packages
         fi
 
         # Update Git repositories
@@ -143,70 +127,16 @@ if [ "$1" == "present" ] && [ -n "$2" ]; then
     exit 0
 fi
 
-# Handle 'burn remove' with proper package name parsing
+# Handle 'burn remove' with direct package names
 if [ "$1" == "remove" ] && [ -n "$2" ]; then
     REPO_NAME="$2"
     TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
 
     if [ -d "$TARGET_DIR" ]; then
         rm -rf "$TARGET_DIR"
-        sed -i "/^$REPO_NAME=/d" "$ALIAS_FILE"
-        echo "Removed: $TARGET_DIR/ and cleaned up alias for '$REPO_NAME'"
+        echo "Removed: $TARGET_DIR/"
     else
         echo "Error: Package '$REPO_NAME' not found."
-    fi
-    exit 0
-fi
-
-# Handle alias creation
-if [ "$1" == "alias" ]; then
-    if [ -n "$2" ] && [ -n "$3" ]; then
-        echo "$2=$3" >> "$ALIAS_FILE"
-        echo "Alias set: $2 → $3"
-    else
-        echo "Error: Missing arguments for 'burn alias'. Usage:"
-        echo "  burn alias <name> <git-url> - Set a shortcut alias for a repo"
-    fi
-    exit 0
-fi
-
-# Handle alias removal
-if [ "$1" == "unalias" ]; then
-    if [ -n "$2" ]; then
-        sed -i "/^$2=/d" "$ALIAS_FILE"
-        echo "Alias removed: $2"
-    else
-        echo "Error: Missing alias name for 'burn unalias'. Usage:"
-        echo "  burn unalias <name> - Remove a shortcut alias"
-    fi
-    exit 0
-fi
-
-# Handle alias renaming with better text processing
-if [ "$1" == "realias" ]; then
-    if [ -n "$2" ] && [ -n "$3" ]; then
-        ALIAS_URL=$(grep "^$2=" "$ALIAS_FILE" | cut -d '=' -f2)
-
-        if [ -z "$ALIAS_URL" ]; then
-            echo "Error: Alias '$2' does not exist."
-            exit 1
-        fi
-        if grep -q "^$3=" "$ALIAS_FILE"; then
-            echo "Error: Alias '$3' already exists."
-            exit 1
-        fi
-
-        # Use `awk` instead of `sed` to handle replacement cleanly
-        awk -v old="$2" -v new="$3" -v url="$ALIAS_URL" '
-            BEGIN { FS=OFS="=" }
-            $1 == old { $1 = new }
-            { print }
-        ' "$ALIAS_FILE" > "$ALIAS_FILE.tmp" && mv "$ALIAS_FILE.tmp" "$ALIAS_FILE"
-
-        echo "Alias renamed: $2 → $3"
-    else
-        echo "Error: Missing arguments for 'burn realias'. Usage:"
-        echo "  burn realias <old-name> <new-name> - Rename an alias"
     fi
     exit 0
 fi
@@ -214,9 +144,6 @@ fi
 # Handle 'burn show'
 if [ "$1" == "show" ]; then
     case "$2" in
-        "alias")
-            [ -s "$ALIAS_FILE" ] && cat "$ALIAS_FILE" || echo "No aliases set."
-            ;;
         "downloads")
             ls "$DOWNLOAD_DIR" || echo "No downloads found."
             ;;
@@ -224,7 +151,7 @@ if [ "$1" == "show" ]; then
             [ -s "$HOLD_FILE" ] && cat "$HOLD_FILE" || echo "No packages are currently held."
             ;;
         *)
-            echo "Error: Invalid argument for 'burn show'. Use 'alias', 'downloads', or 'held'."
+            echo "Error: Invalid argument for 'burn show'. Use 'downloads' or 'held'."
             ;;
     esac
     exit 0
@@ -258,16 +185,13 @@ fi
 echo "Unknown Argument: '$1'"
 echo ""
 echo " Usage:"
-echo "  burn <git-url> - Clone and alias a Git repository"
-echo "  burn alias <name> <git-url> - Set a shortcut alias for a repo"
-echo "  burn remove <name> - Delete a package and its alias"
+echo "  burn <git-url> - Clones a Git repository"
+echo "  burn remove <name> - Deletes a package"
 echo "  burn present <name> - Check if a package is downloaded"
 echo "  burn update [--verbose] - Update all packages"
 echo "  burn hold <package> - Prevent updates for a package"
 echo "  burn unhold <package> - Allow updates again"
-echo "  burn show alias | downloads | held - View stored package information"
-echo "  burn unalias <name> <git-url> - Remove a shortcut alias for a repo"
-echo "  burn realias <name> <git-url> - Rename a shortcut alias for a repo"
+echo "  burn show downloads | held - View stored package information"
 echo "  burn edit post-update-script <package> - Update/Create a script to run after updating (eg; Auto Compiling)
 echo ""
 
