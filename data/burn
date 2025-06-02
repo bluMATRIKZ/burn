@@ -43,7 +43,6 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "?" ]]; then
     echo "  burn hold <package> - Prevent updates for a package"
     echo "  burn unhold <package> - Allow updates again"
     echo "  burn show alias | downloads | held - View stored package information"
-    echo "  burn hash <algorithm> <package> - Compute hash (sha512, sha256, md5) of package files"
     exit 0  # Ensure burn exits immediately after displaying help
 fi
 
@@ -164,35 +163,6 @@ if [ "$1" == "show" ]; then
     exit 0
 fi
 
-# Handle 'burn hash' command correctly
-if [ "$1" == "hash" ] && [ -n "$2" ] && [ -n "$3" ]; then
-    ALGO="$2"
-    REPO_NAME="$3"
-    TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
-
-    if [ ! -d "$TARGET_DIR" ]; then
-        echo "Error: Package '$REPO_NAME' not found."
-        exit 1
-    fi
-
-    # Fix: Use correct hash command formatting
-    if [[ "$ALGO" == "sha-512" ]]; then
-        ALGO="sha512sum"  # Correct the invalid command
-    elif [[ "$ALGO" == "sha-256" ]]; then
-        ALGO="sha256sum"
-    elif [[ "$ALGO" == "md5" ]]; then
-        ALGO="md5sum"
-    else
-        echo "Error: Unsupported hash algorithm '$ALGO'. Use sha512, sha256, or md5."
-        exit 1
-    fi
-
-    echo "Computing $ALGO hash for '$REPO_NAME'..."
-    find "$TARGET_DIR" -type f -exec $ALGO {} + | tee "$TARGET_DIR/.burnhash"
-
-    exit 0
-fi
-
 # Handle unknown arguments
 echo "Unknown Argument: '$1'"
 echo ""
@@ -205,6 +175,5 @@ echo "  burn update [--verbose] - Update all packages"
 echo "  burn hold <package> - Prevent updates for a package"
 echo "  burn unhold <package> - Allow updates again"
 echo "  burn show alias | downloads | held - View stored package information"
-echo "  burn hash <algorithm> <package> - Compute hash (sha512, sha256, md5) of package files"
 
 exit 1
