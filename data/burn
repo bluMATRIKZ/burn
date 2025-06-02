@@ -140,7 +140,7 @@ if [ "$1" == "unalias" ]; then
     exit 0
 fi
 
-# Handle alias renaming with proper argument validation
+# Handle alias renaming with proper escaping
 if [ "$1" == "realias" ]; then
     if [ -n "$2" ] && [ -n "$3" ]; then
         ALIAS_URL=$(grep "^$2=" "$ALIAS_FILE" | cut -d '=' -f2)
@@ -154,7 +154,11 @@ if [ "$1" == "realias" ]; then
             exit 1
         fi
 
-        sed -i "s/^$2=.*$/$3=$ALIAS_URL/" "$ALIAS_FILE"
+        # Fix: Escape special characters in alias names before using `sed`
+        ESCAPED_OLD_NAME=$(printf '%s\n' "$2" | sed 's/[\/&]/\\&/g')
+        ESCAPED_NEW_NAME=$(printf '%s\n' "$3" | sed 's/[\/&]/\\&/g')
+
+        sed -i "s/^$ESCAPED_OLD_NAME=.*$/$ESCAPED_NEW_NAME=$ALIAS_URL/" "$ALIAS_FILE"
         echo "Alias renamed: $2 → $3"
     else
         echo "Error: Missing arguments for 'burn realias'. Usage:"
