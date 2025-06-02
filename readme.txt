@@ -35,6 +35,5 @@ Burn requires the following dependencies:
     md5sum
     sed
     grep
-    coreutils
 
 To install burn, run "sudo ./install" in the root of the extracted folder
