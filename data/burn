@@ -159,7 +159,7 @@ fi
 # Handle unknown arguments
 echo "Unknown Argument: '$1'"
 echo ""
-echo "Usage:"
+echo " Usage:"
 echo "  burn <git-url> - Clone and alias a Git repository"
 echo "  burn alias <name> <git-url> - Set a shortcut alias for a repo"
 echo "  burn remove <name> - Delete a package and its alias"
