@@ -8,8 +8,8 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Copy burn binary to /bin
-cp ./assets/data/burn /bin
-echo "Copied ./assets/data/burn to /bin/"
+cp ./data/burn /bin
+echo "Copied ./data/burn to /bin/"
 
 # Apply execution permissions
 chmod +x /bin/burn
