@@ -140,6 +140,25 @@ if [ "$1" == "unalias" ] && [ -n "$2" ]; then
     exit 0
 fi
 
+# Handle 'burn show'
+if [ "$1" == "show" ]; then
+    case "$2" in
+        "alias")
+            [ -s "$ALIAS_FILE" ] && cat "$ALIAS_FILE" || echo "No aliases set."
+            ;;
+        "downloads")
+            ls "$DOWNLOAD_DIR" || echo "No downloads found."
+            ;;
+        "held")
+            [ -s "$HOLD_FILE" ] && cat "$HOLD_FILE" || echo "No packages are currently held."
+            ;;
+        *)
+            echo "Error: Invalid argument for 'burn show'. Use 'alias', 'downloads', or 'held'."
+            ;;
+    esac
+    exit 0
+fi
+
 # Handle 'burn hash' command
 if [ "$1" == "hash" ] && [ -n "$2" ] && [ -n "$3" ]; then
     ALGO="$2"
