@@ -91,6 +91,41 @@ FILE_NAME=$(basename "$URL")
 REPO_NAME=$(echo "$FILE_NAME" | sed -E 's/\.git//g')
 TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
 
+# Handle 'burn update'
+if [ "$1" == "update" ]; then
+    VERBOSE=false
+    if [ "$2" == "--verbose" ]; then
+        VERBOSE=true
+    fi
+
+    for dir in "$DOWNLOAD_DIR"/*; do
+        REPO_NAME=$(basename "$dir")
+
+        # Skip held repos
+        if grep -Fxq "$REPO_NAME" "$HOLD_FILE"; then
+            echo "$REPO_NAME | Held (not updating)"
+            continue
+        fi
+
+        # Update Git repositories
+        if [ -d "$dir/.git" ]; then
+            echo "Updating $REPO_NAME..."
+            CHANGES=$(cd "$dir" && git pull --quiet && git diff --shortstat)
+
+            if [ -n "$CHANGES" ]; then
+                echo "$REPO_NAME | $CHANGES"
+                if [ "$VERBOSE" = true ]; then
+                    FILES_CHANGED=$(cd "$dir" && git diff --name-only)
+                    echo "    $FILES_CHANGED"
+                fi
+            else
+                echo "$REPO_NAME | No updates"
+            fi
+        fi
+    done
+    exit 0
+fi
+
 # Handle 'burn present'
 if [ "$1" == "present" ]; then
     if [ -d "$TARGET_DIR" ]; then
