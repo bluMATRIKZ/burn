@@ -92,7 +92,7 @@ FILE_NAME=$(basename "$URL")
 REPO_NAME=$(echo "$FILE_NAME" | sed -E 's/\.git//g')
 TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
 
-# Handle 'burn update'
+# Handle 'burn update' properly
 if [ "$1" == "update" ]; then
     VERBOSE=false
     if [ "$2" == "--verbose" ]; then
@@ -102,10 +102,10 @@ if [ "$1" == "update" ]; then
     for dir in "$DOWNLOAD_DIR"/*; do
         REPO_NAME=$(basename "$dir")
 
-        # Skip held repos
+        # FIX: Correctly check if package is held
         if grep -Fxq "$REPO_NAME" "$HOLD_FILE"; then
-            echo "$REPO_NAME | Held (not updating)"
-            continue
+            echo "$REPO_NAME | Held - Not updating"
+            continue  # Skip to the next package
         fi
 
         # Update Git repositories
