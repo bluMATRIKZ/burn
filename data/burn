@@ -104,7 +104,7 @@ if [ "$1" == "update" ]; then
 
         # Skip held repos
         if grep -Fxq "$REPO_NAME" "$HOLD_FILE"; then
-            echo "$REPO_NAME | Held (not updating)"
+            echo "$REPO_NAME | Held - not updating"
             continue
         fi
 
