@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Ensure the script is run as sudo
+if [ "$EUID" -ne 0 ]; then
+    echo "Re-running with sudo..."
+    exec sudo "$0" "$@"
+    exit 1
+fi
+
+# Copy burn binary to /bin
+rm /bin/burn
+echo "Removed /bin/burn"
+
+# Done message
+echo "Done!"
+
