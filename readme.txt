@@ -2,7 +2,7 @@ burn - Git Source Package Manager
 
 burn is a lightweight, manual-friendly package manager for Git-based repositories. It allows users to fetch, alias, hold, update, and track source packages.
 
-Features:
+ Features:
 
     Clone and alias repositories for easy access
 
@@ -24,7 +24,7 @@ Features:
 
 Installation:
 
- burn requires the following dependencies:
+burn requires the following dependencies:
 
     bash
     wget
@@ -37,12 +37,12 @@ Installation:
     grep
     sudo
 
-To install burn, run "sudo make" in the root of the extracted folder
+To install burn, run "make" in the root of the extracted folder
 
 Update:
 
-To install burn, Download the latest release from the GitHub Page and run "sudo make update" in the root of the extracted folder
+To install burn, Download the latest release from the GitHub Page and run "make update" in the root of the extracted folder
 
 Removal:
 
-To remove burn, run "sudo make remove" in the root of the extracted folder
+To remove burn, run "make remove" in the root of the extracted folder
