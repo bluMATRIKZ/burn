@@ -68,7 +68,7 @@ else
     URL="$1"
 fi
 
-# Handle direct Git URL cloning
+# Handle direct Git URL cloning with auto-alias support
 if [[ "$URL" =~ ^https:// ]]; then
     REPO_NAME=$(basename "$URL" .git)
     TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
@@ -78,6 +78,8 @@ if [[ "$URL" =~ ^https:// ]]; then
     else
         echo "Cloning $REPO_NAME..."
         git clone "$URL" "$TARGET_DIR"
+        echo "$REPO_NAME=$URL" >> "$ALIAS_FILE"  # Auto-alias registration
+        echo "Alias set: $REPO_NAME → $URL"
     fi
 
     exit 0
