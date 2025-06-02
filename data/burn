@@ -99,13 +99,16 @@ if [ "$1" == "update" ]; then
         VERBOSE=true
     fi
 
+    # Load held packages into an array for faster lookup
+    mapfile -t HELD_PACKAGES < "$HOLD_FILE"
+
     for dir in "$DOWNLOAD_DIR"/*; do
         REPO_NAME=$(basename "$dir")
 
-        # FIX: Correctly check if package is held
-        if grep -Fxq "$REPO_NAME" "$HOLD_FILE"; then
+        # Check if package is held **using an array lookup**
+        if [[ " ${HELD_PACKAGES[@]} " =~ " $REPO_NAME " ]]; then
             echo "$REPO_NAME | Held - Not updating"
-            continue  # Skip to the next package
+            continue  # Skip held packages
         fi
 
         # Update Git repositories
