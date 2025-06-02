@@ -1,6 +1,6 @@
-.PHONY: install remove update
+.PHONY: all remove update
 
-install:
+all:
 	sudo cp ./data/burn /bin
 	sudo chmod +x /bin/burn
 	@echo "Done! Run 'burn -h' to seek help for burn."
