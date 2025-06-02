@@ -41,7 +41,7 @@ To install burn, run "make" in the root of the extracted folder
 
 Update:
 
-To install burn, Download the latest release from the GitHub Page and run "make" in the root of the extracted folder
+To update burn, Download the latest release from the GitHub Page and run "make" in the root of the extracted folder
 
 Removal:
 
