@@ -1,6 +1,6 @@
 burn - Git Source Package Manager
 
-burn is a lightweight, manual-friendly package manager for Git-based repositories. It allows users to fetch, alias, hold, update, and track source packages with minimal dependencies.
+burn is a lightweight, manual-friendly package manager for Git-based repositories. It allows users to fetch, alias, hold, update, and track source packages.
 
 Features:
 
