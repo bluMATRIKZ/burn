@@ -43,6 +43,8 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "?" ]]; then
     echo "  burn hold <package> - Prevent updates for a package"
     echo "  burn unhold <package> - Allow updates again"
     echo "  burn show alias | downloads | held - View stored package information"
+    echo "  burn unalias <name> <git-url> - Remove a shortcut alias for a repo"
+    echo "  burn realias <name> <git-url> - Rename a shortcut alias for a repo"
     exit 0  # Ensure burn exits immediately after displaying help
 fi
 
@@ -115,32 +117,49 @@ if [ "$1" == "remove" ] && [ -n "$2" ]; then
 fi
 
 # Handle alias creation
-if [ "$1" == "alias" ] && [ -n "$2" ] && [ -n "$3" ]; then
-    echo "$2=$3" >> "$ALIAS_FILE"
-    echo "Alias set: $2 → $3"
-    exit 0
-fi
-
-# Handle alias renaming
-if [ "$1" == "realias" ] && [ -n "$2" ] && [ -n "$3" ]; then
-    ALIAS_URL=$(grep "^$2=" "$ALIAS_FILE" | cut -d '=' -f2)
-    if [ -z "$ALIAS_URL" ]; then
-        echo "Error: Alias '$2' does not exist."
-        exit 1
+if [ "$1" == "alias" ]; then
+    if [ -n "$2" ] && [ -n "$3" ]; then
+        echo "$2=$3" >> "$ALIAS_FILE"
+        echo "Alias set: $2 → $3"
+    else
+        echo "Error: Missing arguments for 'burn alias'. Usage:"
+        echo "  burn alias <name> <git-url> - Set a shortcut alias for a repo"
     fi
-    if grep -q "^$3=" "$ALIAS_FILE"; then
-        echo "Error: Alias '$3' already exists."
-        exit 1
-    fi
-    sed -i "s/^$2=.*$/$3=$ALIAS_URL/" "$ALIAS_FILE"
-    echo "Alias renamed: $2 → $3"
     exit 0
 fi
 
 # Handle alias removal
-if [ "$1" == "unalias" ] && [ -n "$2" ]; then
-    sed -i "/^$2=/d" "$ALIAS_FILE"
-    echo "Alias removed: $2"
+if [ "$1" == "unalias" ]; then
+    if [ -n "$2" ]; then
+        sed -i "/^$2=/d" "$ALIAS_FILE"
+        echo "Alias removed: $2"
+    else
+        echo "Error: Missing alias name for 'burn unalias'. Usage:"
+        echo "  burn unalias <name> - Remove a shortcut alias"
+    fi
+    exit 0
+fi
+
+# Handle alias renaming with proper argument validation
+if [ "$1" == "realias" ]; then
+    if [ -n "$2" ] && [ -n "$3" ]; then
+        ALIAS_URL=$(grep "^$2=" "$ALIAS_FILE" | cut -d '=' -f2)
+
+        if [ -z "$ALIAS_URL" ]; then
+            echo "Error: Alias '$2' does not exist."
+            exit 1
+        fi
+        if grep -q "^$3=" "$ALIAS_FILE"; then
+            echo "Error: Alias '$3' already exists."
+            exit 1
+        fi
+
+        sed -i "s/^$2=.*$/$3=$ALIAS_URL/" "$ALIAS_FILE"
+        echo "Alias renamed: $2 → $3"
+    else
+        echo "Error: Missing arguments for 'burn realias'. Usage:"
+        echo "  burn realias <old-name> <new-name> - Rename an alias"
+    fi
     exit 0
 fi
 
@@ -175,5 +194,7 @@ echo "  burn update [--verbose] - Update all packages"
 echo "  burn hold <package> - Prevent updates for a package"
 echo "  burn unhold <package> - Allow updates again"
 echo "  burn show alias | downloads | held - View stored package information"
+echo "  burn unalias <name> <git-url> - Remove a shortcut alias for a repo"
+echo "  burn realias <name> <git-url> - Rename a shortcut alias for a repo"
 
 exit 1
