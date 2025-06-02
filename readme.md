@@ -2,25 +2,6 @@
 
 burn is a lightweight, manual-friendly package manager for Git-based repositories. It allows users to fetch, alias, hold, update, and track source packages.
 
- Features:
-
-    Clone and alias repositories for easy access
-
-    Track installed packages and check downloads
-
-    Hold and unhold packages to prevent updates
-
-    Update repositories and pull the latest changes from Git, optionally showing file changes
-
-    Support post-update scripts for automation
-
-    Compute package hashes for integrity verification
-
-    Versioning system displays burn's current version on execution
-
-    Minimal dependencies for efficiency
-
-    Full manual control, avoiding automated installations
 
 Installation:
 
@@ -31,8 +12,6 @@ burn requires the following dependencies:
     make
     git
     nano
-    sha256sum
-    md5sum
     sed
     grep
     sudo
