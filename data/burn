@@ -45,7 +45,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "?" ]]; then
     echo "  burn show alias | downloads | held - View stored package information"
     echo "  burn unalias <name> <git-url> - Remove a shortcut alias for a repo"
     echo "  burn realias <name> <git-url> - Rename a shortcut alias for a repo"
-    echo "  burn edit post-update-script <package> - Update/Create a script to run after updating (eg; Auto Compiling)   
+    echo "  burn edit post-update-script <package> - Update/Create a script to run after updating (eg; Auto Compiling)"
     exit 0  # Ensure burn exits immediately after displaying help
 fi
 
@@ -104,7 +104,7 @@ if [ "$1" == "update" ]; then
 
         # Skip held repos
         if grep -Fxq "$REPO_NAME" "$HOLD_FILE"; then
-            echo "$REPO_NAME | Held - not updating"
+            echo "$REPO_NAME | Held (not updating)"
             continue
         fi
 
@@ -266,5 +266,6 @@ echo "  burn show alias | downloads | held - View stored package information"
 echo "  burn unalias <name> <git-url> - Remove a shortcut alias for a repo"
 echo "  burn realias <name> <git-url> - Rename a shortcut alias for a repo"
 echo "  burn edit post-update-script <package> - Update/Create a script to run after updating (eg; Auto Compiling)
+echo ""
 
 exit 1
