@@ -8,7 +8,6 @@ Installation:
 burn requires the following dependencies:
 
     bash
-    wget
     make
     git
     nano
