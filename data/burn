@@ -140,46 +140,6 @@ if [ "$1" == "unalias" ] && [ -n "$2" ]; then
     exit 0
 fi
 
-# Handle 'burn hold'
-if [ "$1" == "hold" ] && [ -n "$2" ]; then
-    echo "$2" >> "$HOLD_FILE"
-    echo "Held: $2 (will not update)"
-    exit 0
-fi
-
-# Handle 'burn unhold'
-if [ "$1" == "unhold" ] && [ -n "$2" ]; then
-    sed -i "/^$2$/d" "$HOLD_FILE"
-    echo "Unheld: $2 (will update again)"
-    exit 0
-fi
-
-# Handle 'burn show held'
-if [ "$1" == "show" ] && [ "$2" == "held" ]; then
-    if [ -s "$HOLD_FILE" ]; then
-        cat "$HOLD_FILE"
-    else
-        echo "No packages are currently held."
-    fi
-    exit 0
-fi
-
-# Handle 'burn show'
-if [ "$1" == "show" ]; then
-    if [ "$2" == "alias" ]; then
-        if [ -s "$ALIAS_FILE" ]; then
-            cat "$ALIAS_FILE"
-        else
-            echo "No aliases set."
-        fi
-    elif [ "$2" == "downloads" ]; then
-        ls "$DOWNLOAD_DIR"
-    else
-        echo "Usage: burn show alias | burn show downloads | burn show held"
-    fi
-    exit 0
-fi
-
 # Handle 'burn hash' command
 if [ "$1" == "hash" ] && [ -n "$2" ] && [ -n "$3" ]; then
     ALGO="$2"
@@ -196,53 +156,18 @@ if [ "$1" == "hash" ] && [ -n "$2" ] && [ -n "$3" ]; then
     exit 0
 fi
 
-# Handle 'burn edit post-update-script'
-if [ "$1" == "edit" ] && [ "$2" == "post-update-script" ] && [ -n "$3" ]; then
-    SCRIPT_PATH="$POST_UPDATE_DIR/$3.sh"
-    touch "$SCRIPT_PATH"
-    chmod +x "$SCRIPT_PATH"
-    echo "Editing post-update script for '$3'..."
-    nano "$SCRIPT_PATH"
-    exit 0
-fi
+# Handle unknown arguments
+echo "Unknown Argument: '$1'"
+echo ""
+echo "Usage:"
+echo "  burn <git-url> - Clone and alias a Git repository"
+echo "  burn alias <name> <git-url> - Set a shortcut alias for a repo"
+echo "  burn remove <name> - Delete a package and its alias"
+echo "  burn present <name> - Check if a package is downloaded"
+echo "  burn update [--verbose] - Update all packages"
+echo "  burn hold <package> - Prevent updates for a package"
+echo "  burn unhold <package> - Allow updates again"
+echo "  burn show alias | downloads | held - View stored package information"
+echo "  burn hash <algorithm> <package> - Compute hash (sha512, sha256, md5) of package files"
 
-# Handle 'burn update'
-if [ "$1" == "update" ]; then
-    VERBOSE=false
-    if [ "$2" == "--verbose" ]; then
-        VERBOSE=true
-    fi
-
-    for dir in "$DOWNLOAD_DIR"/*; do
-        REPO_NAME=$(basename "$dir")
-
-        # Skip held repos
-        if grep -Fxq "$REPO_NAME" "$HOLD_FILE"; then
-            echo "$REPO_NAME | Held (not updating)"
-            continue
-        fi
-
-        # Update Git repositories
-        if [ -d "$dir/.git" ]; then
-            CHANGES=$(cd "$dir" && git pull --quiet && git diff --shortstat)
-
-            if [ -n "$CHANGES" ]; then
-                echo "$REPO_NAME | $CHANGES"
-                if [ "$VERBOSE" = true ]; then
-                    FILES_CHANGED=$(cd "$dir" && git diff --name-only)
-                    echo "    $FILES_CHANGED"
-                fi
-
-                # Run post-update script if it exists
-                SCRIPT_PATH="$POST_UPDATE_DIR/$REPO_NAME.sh"
-                if [ -x "$SCRIPT_PATH" ]; then
-                    echo "Running post-update script for '$REPO_NAME'..."
-                    bash "$SCRIPT_PATH"
-                fi
-            else
-                echo "$REPO_NAME | No updates"
-            fi
-        fi
-    done
-    exit 0
-fi
+exit 1
