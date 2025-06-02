@@ -37,7 +37,7 @@ Installation:
     grep
     sudo
 
-To install burn, run "sudo make install" in the root of the extracted folder
+To install burn, run "sudo make" in the root of the extracted folder
 
 Update:
 
