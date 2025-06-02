@@ -1,0 +1,234 @@
+#!/bin/bash
+
+# Define version information
+VERSION="0.0.1"
+RELEASE_TYPE="Alpha"
+
+# Ensure burn is not run as root (unless --allow-root is used)
+if [ "$EUID" -eq 0 ]; then
+    if [ "$1" == "--allow-root" ]; then
+        echo "Warning: Running burn as root."
+        shift  # Remove --allow-root from arguments
+    else
+        echo "Error: burn should not be run as root. If you really need to use burn with root, pass the \"--allow-root\" argument (Not Recommended)"
+        exit 1
+    fi
+fi
+
+# Define directories
+BURN_DIR="$HOME/.burn"
+DOWNLOAD_DIR="$BURN_DIR/downloads"
+ALIAS_FILE="$BURN_DIR/aliases"
+HOLD_FILE="$BURN_DIR/hold"
+POST_UPDATE_DIR="$BURN_DIR/post-update-scripts"
+
+mkdir -p "$DOWNLOAD_DIR"
+mkdir -p "$BURN_DIR/alias"
+mkdir -p "$POST_UPDATE_DIR"
+touch "$ALIAS_FILE"
+touch "$HOLD_FILE"
+
+# Display version info at startup
+echo "burn Git Source Package Manager (Version $RELEASE_TYPE $VERSION)"
+
+# Handle default execution with no arguments
+if [ -z "$1" ]; then
+    echo "No arguments, -h for help"
+    exit 1
+fi
+
+# Enable debug mode if '--debug' is the first argument
+if [ "$1" == "--debug" ]; then
+    shift  # Remove '--debug' from args
+    echo "Running burn in debug mode..."
+    exec bash -x "$0" "$@"
+    exit 0
+fi
+
+# Handle direct Git URL cloning
+if [[ "$1" =~ ^https:// ]]; then
+    REPO_NAME=$(basename "$1" .git)
+    TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
+
+    if [ -d "$TARGET_DIR/.git" ]; then
+        echo "$REPO_NAME already exists in $TARGET_DIR"
+    else
+        echo "Cloning $REPO_NAME..."
+        git clone "$1" "$TARGET_DIR"
+    fi
+
+    exit 0
+fi
+
+# Handle alias resolution
+ALIAS_URL=$(grep "^$1=" "$ALIAS_FILE" | cut -d '=' -f2)
+if [ -n "$ALIAS_URL" ]; then
+    URL="$ALIAS_URL"
+else
+    URL="$1"
+fi
+
+FILE_NAME=$(basename "$URL")
+REPO_NAME=$(echo "$FILE_NAME" | sed -E 's/\.git//g')
+TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
+
+# Handle 'burn present'
+if [ "$1" == "present" ]; then
+    if [ -d "$TARGET_DIR" ]; then
+        echo "Downloaded at $TARGET_DIR/"
+    else
+        echo "Nein"
+    fi
+    exit 0
+fi
+
+# Handle 'burn remove'
+if [ "$1" == "remove" ]; then
+    if [ -d "$TARGET_DIR" ]; then
+        rm -rf "$TARGET_DIR"
+        sed -i "/^$REPO_NAME=/d" "$ALIAS_FILE"
+        echo "Removed: $TARGET_DIR/ and unaliased $REPO_NAME"
+    else
+        echo "Not found: $TARGET_DIR/"
+    fi
+    exit 0
+fi
+
+# Handle alias creation
+if [ "$1" == "alias" ] && [ -n "$2" ] && [ -n "$3" ]; then
+    echo "$2=$3" >> "$ALIAS_FILE"
+    echo "Alias set: $2 → $3"
+    exit 0
+fi
+
+# Handle alias renaming
+if [ "$1" == "realias" ] && [ -n "$2" ] && [ -n "$3" ]; then
+    ALIAS_URL=$(grep "^$2=" "$ALIAS_FILE" | cut -d '=' -f2)
+    if [ -z "$ALIAS_URL" ]; then
+        echo "Error: Alias '$2' does not exist."
+        exit 1
+    fi
+    if grep -q "^$3=" "$ALIAS_FILE"; then
+        echo "Error: Alias '$3' already exists."
+        exit 1
+    fi
+    sed -i "s/^$2=.*$/$3=$ALIAS_URL/" "$ALIAS_FILE"
+    echo "Alias renamed: $2 → $3"
+    exit 0
+fi
+
+# Handle alias removal
+if [ "$1" == "unalias" ] && [ -n "$2" ]; then
+    sed -i "/^$2=/d" "$ALIAS_FILE"
+    echo "Alias removed: $2"
+    exit 0
+fi
+
+# Handle 'burn hold'
+if [ "$1" == "hold" ] && [ -n "$2" ]; then
+    echo "$2" >> "$HOLD_FILE"
+    echo "Held: $2 (will not update)"
+    exit 0
+fi
+
+# Handle 'burn unhold'
+if [ "$1" == "unhold" ] && [ -n "$2" ]; then
+    sed -i "/^$2$/d" "$HOLD_FILE"
+    echo "Unheld: $2 (will update again)"
+    exit 0
+fi
+
+# Handle 'burn show held'
+if [ "$1" == "show" ] && [ "$2" == "held" ]; then
+    if [ -s "$HOLD_FILE" ]; then
+        cat "$HOLD_FILE"
+    else
+        echo "No packages are currently held."
+    fi
+    exit 0
+fi
+
+# Handle 'burn show'
+if [ "$1" == "show" ]; then
+    if [ "$2" == "alias" ]; then
+        if [ -s "$ALIAS_FILE" ]; then
+            cat "$ALIAS_FILE"
+        else
+            echo "No aliases set."
+        fi
+    elif [ "$2" == "downloads" ]; then
+        ls "$DOWNLOAD_DIR"
+    else
+        echo "Usage: burn show alias | burn show downloads | burn show held"
+    fi
+    exit 0
+fi
+
+# Handle 'burn edit post-update-script'
+if [ "$1" == "edit" ] && [ "$2" == "post-update-script" ] && [ -n "$3" ]; then
+    SCRIPT_PATH="$POST_UPDATE_DIR/$3.sh"
+    touch "$SCRIPT_PATH"
+    chmod +x "$SCRIPT_PATH"
+    echo "Editing post-update script for '$3'..."
+    nano "$SCRIPT_PATH"
+    exit 0
+fi
+
+# Handle 'burn update'
+if [ "$1" == "update" ]; then
+    VERBOSE=false
+    if [ "$2" == "--verbose" ]; then
+        VERBOSE=true
+    fi
+
+    for dir in "$DOWNLOAD_DIR"/*; do
+        REPO_NAME=$(basename "$dir")
+
+        # Skip held repos
+        if grep -Fxq "$REPO_NAME" "$HOLD_FILE"; then
+            echo "$REPO_NAME | Held (not updating)"
+            continue
+        fi
+
+        # Update Git repositories
+        if [ -d "$dir/.git" ]; then
+            CHANGES=$(cd "$dir" && git pull --quiet && git diff --shortstat)
+
+            if [ -n "$CHANGES" ]; then
+                echo "$REPO_NAME | $CHANGES"
+                if [ "$VERBOSE" = true ]; then
+                    FILES_CHANGED=$(cd "$dir" && git diff --name-only)
+                    echo "    $FILES_CHANGED"
+                fi
+
+                # Run post-update script if it exists
+                SCRIPT_PATH="$POST_UPDATE_DIR/$REPO_NAME.sh"
+                if [ -x "$SCRIPT_PATH" ]; then
+                    echo "Running post-update script for '$REPO_NAME'..."
+                    bash "$SCRIPT_PATH"
+                fi
+            else
+                echo "$REPO_NAME | No updates"
+            fi
+        fi
+    done
+    exit 0
+fi
+
+# Catch-all: if the command doesn't match any known options,
+# assume it's a package name and attempt a fetch.
+if [ -n "$1" ]; then
+    REPO_NAME=$(basename "$1" .git)
+    TARGET_DIR="$DOWNLOAD_DIR/$REPO_NAME"
+
+    if [ -d "$TARGET_DIR/.git" ]; then
+        echo "Package '$REPO_NAME' is already installed at $TARGET_DIR."
+    else
+        echo "Attempting to fetch '$REPO_NAME'..."
+        # Modify the clone URL pattern as needed.
+        git clone "https://github.com/$REPO_NAME/$REPO_NAME.git" "$TARGET_DIR" && echo "Successfully cloned '$REPO_NAME' to $TARGET_DIR"
+    fi
+
+    exit 0
+fi
+
