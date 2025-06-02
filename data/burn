@@ -157,12 +157,20 @@ if [ "$1" == "show" ]; then
     exit 0
 fi
 
-# Handle 'burn edit post-update-script' correctly
-if [ "$1" == "edit" ] && [ "$2" == "post-update-script" ] && [ -n "$3" ]; then
-    SCRIPT_PATH="$POST_UPDATE_DIR/$3.sh"
+# Handle 'burn edit post-install-script'
+if [ "$1" == "edit" ] && [ "$2" == "post-install-script" ] && [ -n "$3" ]; then
+    SCRIPT_PATH="$POST_UPDATE_DIR/$3-post-install.sh"
+
+    # Ensure script exists
     touch "$SCRIPT_PATH"
     chmod +x "$SCRIPT_PATH"
-    echo "Editing post-update script for '$3'..."
+
+    # Check if '#!/bin/bash' is already present, add if missing
+    if ! grep -q "^#!/bin/bash" "$SCRIPT_PATH"; then
+        echo "#!/bin/bash" | cat - "$SCRIPT_PATH" > "$SCRIPT_PATH.tmp" && mv "$SCRIPT_PATH.tmp" "$SCRIPT_PATH"
+    fi
+
+    echo "Editing post-install script for '$3'..."
     nano "$SCRIPT_PATH"
     exit 0
 fi
