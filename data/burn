@@ -26,7 +26,7 @@ mkdir -p "$POST_UPDATE_DIR"
 touch "$HOLD_FILE"
 
 # Display version info at startup
-echo "burn Git Source Package Manager (Version $RELEASE_TYPE $VERSION)"
+echo "burn Git Source Package Manager (Version $RELEASE_TYPE v$VERSION)"
 echo ""
 
 # Handle help requests first before any other processing
