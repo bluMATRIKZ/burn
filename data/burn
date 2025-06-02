@@ -164,7 +164,7 @@ if [ "$1" == "show" ]; then
     exit 0
 fi
 
-# Handle 'burn hash' command
+# Handle 'burn hash' command correctly
 if [ "$1" == "hash" ] && [ -n "$2" ] && [ -n "$3" ]; then
     ALGO="$2"
     REPO_NAME="$3"
@@ -175,8 +175,21 @@ if [ "$1" == "hash" ] && [ -n "$2" ] && [ -n "$3" ]; then
         exit 1
     fi
 
+    # Fix: Use correct hash command formatting
+    if [[ "$ALGO" == "sha-512" ]]; then
+        ALGO="sha512sum"  # Correct the invalid command
+    elif [[ "$ALGO" == "sha-256" ]]; then
+        ALGO="sha256sum"
+    elif [[ "$ALGO" == "md5" ]]; then
+        ALGO="md5sum"
+    else
+        echo "Error: Unsupported hash algorithm '$ALGO'. Use sha512, sha256, or md5."
+        exit 1
+    fi
+
     echo "Computing $ALGO hash for '$REPO_NAME'..."
-    find "$TARGET_DIR" -type f -exec $ALGO\sum {} + | tee "$TARGET_DIR/.burnhash"
+    find "$TARGET_DIR" -type f -exec $ALGO {} + | tee "$TARGET_DIR/.burnhash"
+
     exit 0
 fi
 
