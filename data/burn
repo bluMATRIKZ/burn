@@ -30,6 +30,7 @@ touch "$HOLD_FILE"
 
 # Display version info at startup
 echo "burn Git Source Package Manager (Version $RELEASE_TYPE $VERSION)"
+echo ""
 
 # Handle help requests first before any other processing
 if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "?" ]]; then
