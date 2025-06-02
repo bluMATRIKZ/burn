@@ -188,6 +188,20 @@ if [ "$1" == "show" ]; then
     exit 0
 fi
 
+# Handle 'burn hold'
+if [ "$1" == "hold" ] && [ -n "$2" ]; then
+    echo "$2" >> "$HOLD_FILE"
+    echo "Held: $2 (will not update)"
+    exit 0
+fi
+
+# Handle 'burn unhold'
+if [ "$1" == "unhold" ] && [ -n "$2" ]; then
+    sed -i "/^$2$/d" "$HOLD_FILE"
+    echo "Unheld: $2 (will update again)"
+    exit 0
+fi
+
 # Handle unknown arguments
 echo "Unknown Argument: '$1'"
 echo ""
