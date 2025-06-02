@@ -24,7 +24,7 @@ Features
 
 Installation
 
-Burn requires the following dependencies:
+burn requires the following dependencies:
 
     bash
     wget
