@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define version information
-VERSION="0.1.0"
+VERSION="v0.1.1"
 RELEASE_TYPE="Alpha"
 
 # Ensure burn is not run as root (unless --allow-root is used)
@@ -26,7 +26,7 @@ mkdir -p "$POST_UPDATE_DIR"
 touch "$HOLD_FILE"
 
 # Display version info at startup
-echo "burn Git Source Package Manager (Version $RELEASE_TYPE v$VERSION)"
+echo "burn Git Source Package Manager ($RELEASE_TYPE v$VERSION)"
 echo ""
 
 # Handle help requests first before any other processing
